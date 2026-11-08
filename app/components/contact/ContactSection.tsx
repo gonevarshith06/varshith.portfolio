@@ -17,27 +17,13 @@ export default function ContactSection() {
   const [shouldRenderCube, setShouldRenderCube] = useState(false);
 
   useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
+    // Background preload: Mount cube ahead of time so it is 100% ready with zero waiting
+    // ContactCube's internal render loop stays paused until scrolled into view, consuming 0% GPU.
+    const timer = setTimeout(() => {
       setShouldRenderCube(true);
-      return;
-    }
+    }, 200);
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShouldRenderCube(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
+    return () => clearTimeout(timer);
   }, []);
 
   return (

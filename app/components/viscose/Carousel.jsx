@@ -188,7 +188,7 @@ export default function Carousel() {
       console.error("[ring] could not create a WebGL context:", err);
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -3571,7 +3571,21 @@ export default function Carousel() {
       return false;
     };
 
+    let isCarouselVisible = true;
+    const carouselObserver = new IntersectionObserver(
+      ([entry]) => {
+        isCarouselVisible = entry.isIntersecting;
+        if (isCarouselVisible) {
+          prevT = performance.now();
+          needsRender = true;
+        }
+      },
+      { threshold: 0.05 }
+    );
+    if (container) carouselObserver.observe(container);
+
     renderer.setAnimationLoop(() => {
+      if (!isCarouselVisible) return;
       const now = performance.now();
       // Clamped, so a backgrounded tab does not resume with one huge step.
       const dt = Math.min(0.05, (now - prevT) / 1000);
@@ -3687,6 +3701,7 @@ export default function Carousel() {
 
     return () => {
       disposed = true;
+      carouselObserver.disconnect();
       clearTimeout(holdTimer);
       clearTimeout(fontFallback);
       renderer.setAnimationLoop(null);

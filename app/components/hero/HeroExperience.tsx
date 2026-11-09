@@ -268,7 +268,7 @@ export default function HeroExperience({ burstTrigger = false }: HeroExperienceP
     }
 
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     renderer.setClearColor(0x000000, 0);
 
     const ambientLight = new THREE.AmbientLight(0x000e26, 1.0);
@@ -290,9 +290,9 @@ export default function HeroExperience({ burstTrigger = false }: HeroExperienceP
     shineKey.position.set(0, 3, 5);
     scene.add(shineKey);
 
-    // Optimized Sharp Sparkling Electric Blue Butterflies (Silky-Smooth 60 FPS)
+    // Optimized Sharp Sparkling Electric Blue Butterflies (Silky-Smooth 60-120 FPS Locked)
     const isMobile = width < 768;
-    const count = isMobile ? 180 : 420;
+    const count = isMobile ? 110 : 240;
     const geom = getElectricButterflyGeometry();
     const texture = getShiningElectricButterflyTexture();
 
@@ -568,9 +568,14 @@ export default function HeroExperience({ burstTrigger = false }: HeroExperienceP
       ([entry]) => {
         const wasVisible = isVisible;
         isVisible = entry.isIntersecting;
-        if (isVisible && !wasVisible && !animId) {
+        if (isVisible && !wasVisible) {
           clock.start();
-          animate();
+          if (!animId) {
+            animate();
+          }
+        } else if (!isVisible && animId) {
+          cancelAnimationFrame(animId);
+          animId = 0;
         }
       },
       { threshold: 0.05 }
@@ -588,6 +593,7 @@ export default function HeroExperience({ burstTrigger = false }: HeroExperienceP
 
     const animate = () => {
       if (!isVisible) {
+        if (animId) cancelAnimationFrame(animId);
         animId = 0;
         return;
       }
@@ -787,7 +793,7 @@ export default function HeroExperience({ burstTrigger = false }: HeroExperienceP
       camera.position.z = width < 768 ? 9.8 : 8.5;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     };
     window.addEventListener("resize", onResize);
 

@@ -403,7 +403,7 @@ export default function ContactCube() {
     }
 
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
@@ -470,18 +470,17 @@ export default function ContactCube() {
     };
 
     // Helper to create polished luxury obsidian crystal face material
+    // High-performance standard/physical material (transmission: 0 eliminates offscreen framebuffer copies)
     const createFaceMat = (tex: THREE.CanvasTexture) =>
       new THREE.MeshPhysicalMaterial({
         map: tex,
         emissiveMap: tex,
         emissive: new THREE.Color(0xffffff),
         emissiveIntensity: 0.38,
-        roughness: 0.12,
-        metalness: 0.22,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.08,
-        transmission: 0.58,
-        ior: 1.52,
+        roughness: 0.16,
+        metalness: 0.35,
+        clearcoat: 0.9,
+        clearcoatRoughness: 0.1,
         transparent: true,
         opacity: 0.96,
       });
@@ -625,7 +624,7 @@ export default function ContactCube() {
     cubeGroup.rotation.y = -0.45;
 
     let animId: number = 0;
-    let isVisible = true;
+    let isVisible = false;
     let clock = new THREE.Clock();
     let currentPlatformId = "github";
 
@@ -633,9 +632,14 @@ export default function ContactCube() {
       ([entry]) => {
         const wasVisible = isVisible;
         isVisible = entry.isIntersecting;
-        if (isVisible && !wasVisible && !animId) {
+        if (isVisible && !wasVisible) {
           clock.start();
-          animate();
+          if (!animId) {
+            animate();
+          }
+        } else if (!isVisible && animId) {
+          cancelAnimationFrame(animId);
+          animId = 0;
         }
       },
       { threshold: 0.05 }
@@ -644,6 +648,7 @@ export default function ContactCube() {
 
     const animate = () => {
       if (!isVisible) {
+        if (animId) cancelAnimationFrame(animId);
         animId = 0;
         return;
       }
@@ -699,14 +704,13 @@ export default function ContactCube() {
       renderer.render(scene, camera);
     };
 
-    animate();
-
     const onResize = () => {
       const newW = container.clientWidth || 460;
       const newH = container.clientHeight || 460;
       camera.aspect = newW / newH;
       camera.updateProjectionMatrix();
       renderer.setSize(newW, newH);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     };
     window.addEventListener("resize", onResize);
 

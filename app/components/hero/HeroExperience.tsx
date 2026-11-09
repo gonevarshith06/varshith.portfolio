@@ -160,11 +160,19 @@ function getElectricButterflyGeometry(): THREE.BufferGeometry {
           outerSpan = 0.7 + Math.sin(v * Math.PI * 2.0) * 0.32;
         } else {
           const hindV = (v - 0.5) * 2.0;
-          outerSpan = 0.6 * (1.0 - hindV * 0.45) + Math.sin(hindV * Math.PI * 3.0) * 0.05;
+          // Elegant swallowtail wing contour extension at lower hindwing edge
+          const swallowTail =
+            v > 0.72 && v < 0.94 && u > 0.68
+              ? 0.16 * Math.sin(((v - 0.72) / 0.22) * Math.PI) * (u - 0.68) * 3.1
+              : 0.0;
+          outerSpan =
+            0.6 * (1.0 - hindV * 0.45) +
+            Math.sin(hindV * Math.PI * 3.0) * 0.05 +
+            swallowTail;
         }
 
         const x = side * (0.032 + u * outerSpan);
-        const z = -Math.sin(u * Math.PI) * 0.03 * (1.0 - v * 0.4);
+        const z = -Math.sin(u * Math.PI) * 0.035 * (1.0 - v * 0.38);
 
         vertices.push(x, y, z);
         uvs.push(0.5 + side * u * 0.48, v);
@@ -186,6 +194,30 @@ function getElectricButterflyGeometry(): THREE.BufferGeometry {
           indices.push(i1, i2, i3);
         }
       }
+    }
+
+    // Slender 3D Curved Antennae extending from head
+    const antennaSegments = 6;
+    const antStart = vertices.length / 3;
+    for (let k = 0; k <= antennaSegments; k++) {
+      const s = k / antennaSegments;
+      const ax = side * (0.016 + s * 0.088 + Math.sin(s * Math.PI * 0.6) * 0.02);
+      const ay = 0.21 + s * 0.17;
+      const az = 0.02 + Math.sin(s * Math.PI) * 0.04;
+      const thick = Math.max(0.003, (1.0 - s * 0.65) * 0.006);
+
+      vertices.push(ax, ay, az);
+      uvs.push(0.5, 0.1);
+      vertices.push(ax + side * thick, ay, az + thick);
+      uvs.push(0.5, 0.1);
+    }
+    for (let k = 0; k < antennaSegments; k++) {
+      const i0 = antStart + k * 2;
+      const i1 = i0 + 1;
+      const i2 = antStart + (k + 1) * 2;
+      const i3 = i2 + 1;
+      indices.push(i0, i1, i2);
+      indices.push(i1, i3, i2);
     }
   }
 
@@ -310,6 +342,18 @@ export default function HeroExperience({ burstTrigger = false }: HeroExperienceP
         } else {
           transformed.z += sin(uTime * 1.8 + aPhase) * 0.012;
         }
+        `
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <dithering_fragment>",
+        `
+        #include <dithering_fragment>
+        // Physically-based iridescent thin-film sheen
+        vec3 vDir = normalize(vViewPosition);
+        float fresnel = pow(clamp(1.0 - abs(dot(normalize(vNormal), vDir)), 0.0, 1.0), 2.6);
+        vec3 iridGlaze = mix(vec3(0.0, 0.94, 1.0), vec3(0.52, 0.26, 1.0), fresnel);
+        gl_FragColor.rgb += iridGlaze * fresnel * 0.42;
         `
       );
     };

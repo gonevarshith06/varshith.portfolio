@@ -33,7 +33,22 @@ const TECH_ROW_2 = [
 
 export default function AboutSection() {
   const [scrollWordsLit, setScrollWordsLit] = useState(0);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setTilt({ x: -(y * 12), y: x * 12 });
+    setIsHovered(true);
+  };
+
+  const handlePointerLeave = () => {
+    setTilt({ x: 0, y: 0 });
+    setIsHovered(false);
+  };
 
   // Split words for smooth scroll lighting effect
   const allWords = ABOUT_PARAGRAPHS.join(" ").split(" ");
@@ -95,9 +110,21 @@ export default function AboutSection() {
 
         {/* 2-Column Row: Left Portrait Image & Right Narrative Card with Matching Height */}
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 md:gap-12 lg:gap-14 items-stretch">
-          {/* Left Column: Varshith's Portrait Photo */}
+          {/* Left Column: Varshith's Portrait Photo with 3D Holographic Tilt */}
           <div className="flex justify-center lg:justify-start">
-            <div className="relative w-full max-w-[260px] sm:max-w-[300px] lg:w-[320px] aspect-[3/4] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 bg-zinc-950 shadow-[0_20px_50px_rgba(0,0,0,0.85)] group">
+            <div
+              onPointerMove={handlePointerMove}
+              onPointerLeave={handlePointerLeave}
+              style={{
+                transform: isHovered
+                  ? `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(1.025, 1.025, 1.025)`
+                  : "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)",
+                transition: isHovered ? "transform 0.08s ease-out" : "transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1)",
+                transformStyle: "preserve-3d",
+                willChange: "transform",
+              }}
+              className="relative w-full max-w-[260px] sm:max-w-[300px] lg:w-[320px] aspect-[3/4] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 bg-zinc-950 shadow-[0_20px_50px_rgba(0,0,0,0.85)] group cursor-pointer"
+            >
               <Image
                 src="/images/varshith_portrait.jpg"
                 alt="Varshith"
@@ -107,6 +134,15 @@ export default function AboutSection() {
                 priority
                 unoptimized
               />
+              {/* Dynamic 3D Specular Light Glaze */}
+              {isHovered && (
+                <div
+                  className="absolute inset-0 pointer-events-none z-10 transition-opacity duration-300"
+                  style={{
+                    background: `radial-gradient(circle at ${(tilt.y / 12 + 0.5) * 100}% ${(-tilt.x / 12 + 0.5) * 100}%, rgba(255,255,255,0.18) 0%, transparent 65%)`,
+                  }}
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
               <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-10">
                 <span className="px-3 py-1 rounded-full text-[10px] font-mono tracking-widest uppercase bg-black/75 backdrop-blur-md border border-white/15 text-zinc-300 flex items-center gap-1.5 shadow-sm">

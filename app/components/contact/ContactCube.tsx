@@ -444,6 +444,18 @@ export default function ContactCube() {
     const outerCoreAuraMesh = new THREE.Mesh(outerCoreAuraGeom, outerCoreAuraMat);
     coreGroup.add(outerCoreAuraMesh);
 
+    // Luminous Quantum Orbital Ring inside Core
+    const ringGeom = new THREE.TorusGeometry(0.56, 0.012, 16, 64);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending,
+    });
+    const ringMesh = new THREE.Mesh(ringGeom, ringMat);
+    ringMesh.rotation.x = Math.PI / 3;
+    coreGroup.add(ringMesh);
+
     const coreLight = new THREE.PointLight(0xffffff, 1.2, 5);
     coreGroup.add(coreLight);
 
@@ -457,17 +469,21 @@ export default function ContactCube() {
       back: createElegantFaceTexture(PLATFORMS.back),
     };
 
-    // Helper to create frosted luxury glass face material
+    // Helper to create polished luxury obsidian crystal face material
     const createFaceMat = (tex: THREE.CanvasTexture) =>
-      new THREE.MeshStandardMaterial({
+      new THREE.MeshPhysicalMaterial({
         map: tex,
         emissiveMap: tex,
         emissive: new THREE.Color(0xffffff),
-        emissiveIntensity: 0.42,
-        roughness: 0.28,
-        metalness: 0.35,
+        emissiveIntensity: 0.38,
+        roughness: 0.12,
+        metalness: 0.22,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.08,
+        transmission: 0.58,
+        ior: 1.52,
         transparent: true,
-        opacity: 0.94,
+        opacity: 0.96,
       });
 
     // 6 Faces in standard Three.js order:
@@ -477,7 +493,7 @@ export default function ContactCube() {
     // 3: -Y (Bottom: WhatsApp)
     // 4: +Z (Front: GitHub)
     // 5: -Z (Back: Instagram)
-    const faceMaterials: THREE.MeshStandardMaterial[] = [
+    const faceMaterials: THREE.MeshPhysicalMaterial[] = [
       createFaceMat(textures.right),
       createFaceMat(textures.left),
       createFaceMat(textures.top),
@@ -647,9 +663,11 @@ export default function ContactCube() {
 
       cubeGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.08;
 
-      // Soft Pulse on Core
+      // Soft Pulse on Core & Luminous Orbital Ring
       const pulse = 1.0 + Math.sin(elapsedTime * 3.0) * 0.08;
       coreGroup.scale.setScalar(pulse);
+      ringMesh.rotation.z = elapsedTime * 1.2;
+      ringMesh.rotation.y = elapsedTime * 0.7;
 
       // Determine which face is pointing most towards the user
       const forwardVec = new THREE.Vector3(0, 0, 1);
@@ -707,6 +725,8 @@ export default function ContactCube() {
       innerCoreMat.dispose();
       outerCoreAuraGeom.dispose();
       outerCoreAuraMat.dispose();
+      ringGeom.dispose();
+      ringMat.dispose();
       cubeGeometry.dispose();
       edgesGeometry.dispose();
       wireframeMaterial.dispose();
